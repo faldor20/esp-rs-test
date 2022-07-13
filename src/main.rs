@@ -10,14 +10,9 @@ use embedded_graphics::{
     prelude::*,
     text::Text,
 };
-use esp_idf_hal::{
-    delay, gpio,
-    i2c::{self, I2c},
-    peripherals,
-    prelude::*,
-};
-//use sh1106::{interface::DisplayInterface, mode::graphics, prelude::*, Builder, displayrotation};
-use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
+use esp_idf_hal::{delay, gpio, i2c, peripherals, prelude::*};
+use sh1106::{interface::DisplayInterface, mode::graphics, prelude::*, Builder};
+
 fn main() {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
@@ -38,21 +33,18 @@ fn setup_i2c_display(
 
     let mut delay = delay::Ets;
 
-    //    let display = sh1106::Builder::new().connect_i2c(di);
-    let interface = I2CDisplayInterface::new(di);
-    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-        .into_buffered_graphics_mode();
-    display.init().unwrap();
-    let mut graphics = display;
+    let mut display = sh1106::Builder::new().connect_i2c(di);
+    
+    let mut graphics: GraphicsMode<_> = display.into();
+    graphics.init().unwrap();
     Text::new(
         "Hello World! - default style 5x8",
         Point::new(15, 15),
         MonoTextStyle::new(&FONT_5X8, BinaryColor::On),
     )
-    .draw(&mut graphics)
-    .unwrap();
+    .draw(&mut graphics)?;
 
-    graphics.set_pixel(5, 5, true);
+    graphics.set_pixel(5, 5, 255);
     graphics
         .flush()
         .map_err(|e| anyhow::anyhow!("Display error: {:?}", e))?;
